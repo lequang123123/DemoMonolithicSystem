@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  # PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce_app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - ecommerce
+
+  # Nginx Service
+  webserver:
+    image: nginx:alpine
+    container_name: ecommerce_webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - ecommerce
+
+  # MySQL Service
+  db:
+    image: mysql:8.0
+    container_name: ecommerce_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: ecommerce
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: secret
+      MYSQL_USER: laravel
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - dbdata:/var/lib/mysql/
+      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - ecommerce
+
+  # Redis Service
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - ecommerce
+
+  # Elasticsearch Service
+  elasticsearch:
+    image: elasticsearch:7.17.0
+    container_name: ecommerce_elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearchdata:/usr/share/elasticsearch/data
+    networks:
+      - ecommerce
+
+  # Queue Worker
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce_queue
+    restart: unless-stopped
+    command: php artisan queue:work --verbose --tries=3 --timeout=90
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - ecommerce
+
+# Docker Networks
+networks:
+  ecommerce:
+    driver: bridge
+
+# Volumes
+volumes:
+  dbdata:
+    driver: local
+  redisdata:
+    driver: local
+  elasticsearchdata:
+    driver: local 

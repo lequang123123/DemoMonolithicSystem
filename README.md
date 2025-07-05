@@ -74,38 +74,6 @@ Laravel E-commerce Monolithic Structure
 └── public/                       # Web root
 ```
 
-## Sơ đồ Hạ tầng trên AWS
-
-### Production Architecture:
-
-```
-Internet
-    ↓
-CloudFront (CDN)
-    ↓
-Application Load Balancer
-    ↓
-┌─────────────────────────────────┐
-│           VPC                   │
-│  ┌─────────────────────────────┐│
-│  │     Public Subnet           ││
-│  │  ┌─────────────────────────┐││
-│  │  │     Auto Scaling Group  │││
-│  │  │  ┌─────────┐ ┌─────────┐│││
-│  │  │  │  EC2     │ │  EC2    ││││
-│  │  │  │(Laravel) │ │(Laravel)││││
-│  │  │  └─────────┘ └─────────┘│││
-│  │  └─────────────────────────┘││
-│  └─────────────────────────────┘│
-│  ┌─────────────────────────────┐│
-│  │     Private Subnet          ││
-│  │  ┌─────────┐ ┌─────────────┐││
-│  │  │   RDS   │ │   ElastiCache│││
-│  │  │ (MySQL) │ │   (Redis)   │││
-│  │  └─────────┘ └─────────────┘││
-│  └─────────────────────────────┘│
-└─────────────────────────────────┘
-```
 
 ### AWS Services sử dụng:
 - **EC2**: Hosting Laravel application
@@ -113,8 +81,6 @@ Application Load Balancer
 - **ElastiCache Redis**: Cache và Session storage
 - **S3**: File storage cho images
 - **CloudFront**: CDN cho static assets
-- **Application Load Balancer**: Phân phối tải
-- **Auto Scaling**: Tự động scale theo traffic
 - **Route 53**: DNS management
 - **CloudWatch**: Monitoring và logging
 - **CodeDeploy**: Automated deployment
